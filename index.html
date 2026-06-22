@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Rush Arena</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#05070f;
+color:white;
+overflow-x:hidden;
+}
+
+.top{
+position:sticky;
+top:0;
+background:#0b1220;
+padding:12px;
+text-align:center;
+font-weight:bold;
+border-bottom:1px solid #00f2fe;
+}
+
+.nav{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:10px;
+}
+
+button{
+padding:10px;
+border:none;
+border-radius:10px;
+background:#00f2fe;
+font-weight:bold;
+cursor:pointer;
+}
+
+.card{
+background:rgba(255,255,255,0.05);
+border:1px solid rgba(0,242,254,0.2);
+margin:15px auto;
+width:92%;
+padding:15px;
+border-radius:15px;
+}
+
+.big{font-size:26px;color:#00f2fe}
+</style>
+</head>
+
+<body>
+
+<div class="top">⚡ NEON RUSH ARENA</div>
+
+<div class="nav">
+<button onclick="show('home')">Home</button>
+<button onclick="show('click')">Click</button>
+<button onclick="show('math')">Math</button>
+<button onclick="show('react')">React</button>
+</div>
+
+<!-- HOME -->
+<div id="home" class="card">
+<h2>🌍 Dashboard</h2>
+
+<button onclick="login()">Login with Google</button>
+<p id="user"></p>
+
+<h3>🏆 Hall of Fame</h3>
+<ol id="hof"></ol>
+</div>
+
+<!-- CLICK -->
+<div id="click" class="card" style="display:none">
+<h2>Click Game</h2>
+<p>Time: <span id="t1">10</span></p>
+<button onclick="startClick()">Start</button>
+<button onclick="clickBtn()">Click</button>
+<div class="big" id="s1">0</div>
+</div>
+
+<!-- MATH -->
+<div id="math" class="card" style="display:none">
+<h2>Math Game</h2>
+<p id="q">Start</p>
+<input id="a">
+<button onclick="startMath()">Start</button>
+<button onclick="checkMath()">Check</button>
+<div class="big" id="s2">0</div>
+<p id="time2"></p>
+</div>
+
+<!-- REACT -->
+<div id="react" class="card" style="display:none">
+<h2>Reaction Game</h2>
+<p id="r">Start</p>
+<button onclick="startReact()">Start</button>
+<div class="big" id="s3">0</div>
+</div>
+
+<script>
+function show(x){
+document.querySelectorAll(".card").forEach(c=>c.style.display="none");
+document.getElementById(x).style.display="block";
+}
+
+/* CLICK GAME */
+let c=0,t=10,run=false;
+
+function startClick(){
+c=0;t=10;run=true;
+
+let i=setInterval(()=>{
+t--;
+document.getElementById("t1").innerText=t;
+
+if(t<=0){
+clearInterval(i);
+run=false;
+save("click",c);
+}
+},1000);
+}
+
+function clickBtn(){
+if(!run)return;
+c++;
+document.getElementById("s1").innerText=c;
+}
+
+/* MATH GAME */
+let sc=0,qc=0,ans,startT;
+
+function startMath(){
+sc=0;qc=0;
+startT=performance.now();
+newQ();
+}
+
+function newQ(){
+let a=Math.floor(Math.random()*10);
+let b=Math.floor(Math.random()*10);
+ans=a+b;
+document.getElementById("q").innerText=a+" + "+b;
+}
+
+function checkMath(){
+let v=Number(document.getElementById("a").value);
+
+if(v===ans){
+sc++;qc++;
+
+if(qc===10){
+let time=(performance.now()-startT)/1000;
+document.getElementById("time2").innerText=time.toFixed(2)+"s";
+save("math",{score:sc,time});
+}else{
+newQ();
+}
+}
+
+document.getElementById("s2").innerText=sc;
+document.getElementById("a").value="";
+}
+
+/* REACTION GAME */
+let rt;
+let reactActive = false;
+
+function startReact(){
+reactActive = true;
+document.getElementById("r").innerText="WAIT...";
+
+setTimeout(()=>{
+rt=performance.now();
+document.getElementById("r").innerText="CLICK!";
+},Math.random()*3000+1000);
+}
+
+document.addEventListener("click",(e)=>{
+if(!reactActive) return;
+if(!rt) return;
+if(e.target.tagName==="BUTTON") return;
+
+let ms=performance.now()-rt;
+rt=null;
+reactActive=false;
+
+document.getElementById("s3").innerText=ms.toFixed(0)+"ms";
+save("react",{score:ms});
+});
+</script>
+
+<!-- FIREBASE FIXED -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+import { getDatabase, ref, set, get, onValue }
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+/* ✅ YOUR REAL FIREBASE CONFIG */
+const firebaseConfig = {
+apiKey: "AIzaSyBDXh7kZU-1NjB3jNfsNER30Dc3p7onYXw",
+authDomain: "gamee-38e94.firebaseapp.com",
+databaseURL: "https://gamee-38e94-default-rtdb.firebaseio.com",
+projectId: "gamee-38e94",
+storageBucket: "gamee-38e94.appspot.com",
+messagingSenderId: "621476330905",
+appId: "1:621476330905:web:e00ede7d549a19a9f4a708"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const provider = new GoogleAuthProvider();
+
+/* LOGIN */
+window.login = async () => {
+try{
+const result = await signInWithPopup(auth, provider);
+window.player = result.user.displayName;
+
+document.getElementById("user").innerText =
+"Logged in as: " + window.player;
+}catch(err){
+alert("Login failed: " + err.message);
+}
+};
+
+onAuthStateChanged(auth,(user)=>{
+if(user){
+window.player = user.displayName;
+document.getElementById("user").innerText =
+"Logged in as: " + window.player;
+}
+});
+
+/* SAVE SCORE */
+window.save = (game,data)=>{
+if(!window.player) return;
+
+const id = window.player.toLowerCase();
+const r = ref(db,"leaderboards/"+game+"/"+id);
+
+get(r).then(s=>{
+let old = s.val();
+
+if(game==="react"){
+if(!old || data.score < old.score){
+set(r,{name:window.player,score:data.score});
+}
+}else{
+if(!old || data.score > old.score){
+set(r,{name:window.player,score:data.score,time:data.time||0});
+}
+}
+});
+};
+
+/* HALL OF FAME */
+function load(){
+onValue(ref(db,"leaderboards"),s=>{
+let d=s.val();
+let list=document.getElementById("hof");
+list.innerHTML="";
+if(!d) return;
+
+let all=[];
+
+Object.values(d).forEach(game=>{
+Object.values(game||{}).forEach(p=>{
+all.push(p);
+});
+});
+
+all.sort((a,b)=>(b.score||0)-(a.score||0));
+
+all.slice(0,5).forEach(p=>{
+let li=document.createElement("li");
+li.innerText=`${p.name} - ${p.score}`;
+list.appendChild(li);
+});
+});
+}
+
+load();
+</script>
+
+</body>
+</html>
