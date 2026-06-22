@@ -10,7 +10,6 @@ margin:0;
 font-family:Arial;
 background:#05070f;
 color:white;
-overflow-x:hidden;
 }
 
 .top{
@@ -65,8 +64,7 @@ border-radius:15px;
 
 <!-- HOME -->
 <div id="home" class="card">
-<h2>🌍 Dashboard</h2>
-
+<h2>Dashboard</h2>
 <button onclick="login()">Login with Google</button>
 <p id="user"></p>
 
@@ -110,16 +108,14 @@ document.getElementById(x).style.display="block";
 
 /* CLICK GAME */
 let c=0,t=10,run=false;
+let clickStart=0;
 
 function startClick(){
-c=0;
-t=10;
-run=true;
+c=0;t=10;run=true;
+clickStart = performance.now();
 
 document.getElementById("s1").innerText=0;
 document.getElementById("t1").innerText=10;
-
-let startTime = performance.now();
 
 let i=setInterval(()=>{
 t--;
@@ -129,8 +125,9 @@ if(t<=0){
 clearInterval(i);
 run=false;
 
-let timeTaken = ((performance.now()-startTime)/1000).toFixed(2);
-save("click",{score:c,time:timeTaken});
+let time=(performance.now()-clickStart)/1000;
+
+save("click",{score:c,time:time.toFixed(2)});
 }
 },1000);
 }
@@ -145,8 +142,7 @@ document.getElementById("s1").innerText=c;
 let sc=0,qc=0,ans,startT;
 
 function startMath(){
-sc=0;
-qc=0;
+sc=0;qc=0;
 startT=performance.now();
 newQ();
 }
@@ -179,28 +175,33 @@ document.getElementById("a").value="";
 }
 
 /* REACTION GAME */
-let rt;
+let rt=null;
 let reactActive=false;
 
 function startReact(){
 reactActive=true;
+rt=null;
+
 document.getElementById("r").innerText="WAIT...";
 
 setTimeout(()=>{
+if(!reactActive) return;
 rt=performance.now();
 document.getElementById("r").innerText="CLICK!";
 },Math.random()*3000+1000);
 }
 
-document.addEventListener("click",(e)=>{
+document.getElementById("react").addEventListener("click",(e)=>{
 if(!reactActive || !rt) return;
 if(e.target.tagName==="BUTTON") return;
 
 let ms=performance.now()-rt;
+
 rt=null;
 reactActive=false;
 
 document.getElementById("s3").innerText=ms.toFixed(0)+"ms";
+
 save("react",{score:ms});
 });
 </script>
@@ -292,7 +293,7 @@ all.slice(0,5).forEach(p=>{
 let li=document.createElement("li");
 
 if(p.time){
-li.innerText=`${p.name} - ${p.score} (${p.time})`;
+li.innerText=`${p.name} - ${p.score} (${p.time}s)`;
 }else{
 li.innerText=`${p.name} - ${p.score}`;
 }
