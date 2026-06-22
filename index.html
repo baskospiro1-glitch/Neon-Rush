@@ -112,7 +112,14 @@ document.getElementById(x).style.display="block";
 let c=0,t=10,run=false;
 
 function startClick(){
-c=0;t=10;run=true;
+c=0;
+t=10;
+run=true;
+
+document.getElementById("s1").innerText=0;
+document.getElementById("t1").innerText=10;
+
+let startTime = performance.now();
 
 let i=setInterval(()=>{
 t--;
@@ -121,7 +128,9 @@ document.getElementById("t1").innerText=t;
 if(t<=0){
 clearInterval(i);
 run=false;
-save("click",c);
+
+let timeTaken = ((performance.now()-startTime)/1000).toFixed(2);
+save("click",{score:c,time:timeTaken});
 }
 },1000);
 }
@@ -136,7 +145,8 @@ document.getElementById("s1").innerText=c;
 let sc=0,qc=0,ans,startT;
 
 function startMath(){
-sc=0;qc=0;
+sc=0;
+qc=0;
 startT=performance.now();
 newQ();
 }
@@ -152,7 +162,8 @@ function checkMath(){
 let v=Number(document.getElementById("a").value);
 
 if(v===ans){
-sc++;qc++;
+sc++;
+qc++;
 
 if(qc===10){
 let time=(performance.now()-startT)/1000;
@@ -169,10 +180,10 @@ document.getElementById("a").value="";
 
 /* REACTION GAME */
 let rt;
-let reactActive = false;
+let reactActive=false;
 
 function startReact(){
-reactActive = true;
+reactActive=true;
 document.getElementById("r").innerText="WAIT...";
 
 setTimeout(()=>{
@@ -182,8 +193,7 @@ document.getElementById("r").innerText="CLICK!";
 }
 
 document.addEventListener("click",(e)=>{
-if(!reactActive) return;
-if(!rt) return;
+if(!reactActive || !rt) return;
 if(e.target.tagName==="BUTTON") return;
 
 let ms=performance.now()-rt;
@@ -195,7 +205,7 @@ save("react",{score:ms});
 });
 </script>
 
-<!-- FIREBASE FIXED -->
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
@@ -204,7 +214,7 @@ from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { getDatabase, ref, set, get, onValue }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-/* ✅ YOUR REAL FIREBASE CONFIG */
+/* YOUR FIREBASE CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBDXh7kZU-1NjB3jNfsNER30Dc3p7onYXw",
 authDomain: "gamee-38e94.firebaseapp.com",
@@ -225,11 +235,10 @@ window.login = async () => {
 try{
 const result = await signInWithPopup(auth, provider);
 window.player = result.user.displayName;
-
 document.getElementById("user").innerText =
 "Logged in as: " + window.player;
-}catch(err){
-alert("Login failed: " + err.message);
+}catch(e){
+alert(e.message);
 }
 };
 
@@ -241,7 +250,7 @@ document.getElementById("user").innerText =
 }
 });
 
-/* SAVE SCORE */
+/* SAVE */
 window.save = (game,data)=>{
 if(!window.player) return;
 
@@ -249,30 +258,28 @@ const id = window.player.toLowerCase();
 const r = ref(db,"leaderboards/"+game+"/"+id);
 
 get(r).then(s=>{
-let old = s.val();
+let old=s.val();
 
-if(game==="react"){
-if(!old || data.score < old.score){
-set(r,{name:window.player,score:data.score});
-}
-}else{
-if(!old || data.score > old.score){
-set(r,{name:window.player,score:data.score,time:data.time||0});
-}
+if(!old || data.score > (old.score||0)){
+set(r,{
+name:window.player,
+score:data.score,
+time:data.time||0
+});
 }
 });
 };
 
-/* HALL OF FAME */
+/* LEADERBOARD */
 function load(){
 onValue(ref(db,"leaderboards"),s=>{
 let d=s.val();
 let list=document.getElementById("hof");
 list.innerHTML="";
+
 if(!d) return;
 
 let all=[];
-
 Object.values(d).forEach(game=>{
 Object.values(game||{}).forEach(p=>{
 all.push(p);
@@ -283,7 +290,13 @@ all.sort((a,b)=>(b.score||0)-(a.score||0));
 
 all.slice(0,5).forEach(p=>{
 let li=document.createElement("li");
+
+if(p.time){
+li.innerText=`${p.name} - ${p.score} (${p.time})`;
+}else{
 li.innerText=`${p.name} - ${p.score}`;
+}
+
 list.appendChild(li);
 });
 });
